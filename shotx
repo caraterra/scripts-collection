@@ -1,0 +1,55 @@
+#!/bin/sh
+# shotx
+# Combines the shotgun, hacksaw, and xclip utilities into a simple screenshot
+# tool for X
+
+# shotgun: https://github.com/neXromancers/shotgun
+# hacksaw: https://github.com/neXromancers/hacksaw
+# xclip: https://github.com/astrand/xclip
+
+print_help() {
+	echo "shot: Takes a screenshot using shotgun, copying to xclip."
+	echo -e "  -s\tEnables region selection"
+	echo -e "  -h\tPrints this message and exits"
+}
+
+set_select=false
+
+for i in "$@"; do
+	if [ $i == "-s" ]; then
+		set_select=true
+	elif [ $i == "-h" ]; then
+		print_help
+		exit 0
+	else
+		echo "invalid argument ($i)"
+		exit 1
+	fi
+done
+
+if ! command -v shotgun > /dev/null; then
+	echo "shotgun is not installed: https://github.com/neXromancers/hacksaw"
+	exit 1
+fi
+
+if ! command -v hacksaw > /dev/null;
+	echo "hacksaw is not installed: https://github.com/neXromancers/hacksaw"
+	exit 1
+fi
+
+savedir=${HOME}
+[ -d ${HOME}/Pictures ] && savedir=${HOME}/Pictures
+[ -d ${HOME}/Pictures/screenshots ] && savedir=${HOME}/Pictures/screenshots
+
+savedir=${savedir}/$(date +%Y%m%dT%H%M%S%3N).png
+
+if [ $set_select == true ]; then
+	selection=$(hacksaw -f "-i %i -g %g")
+	shotgun $selection $savedir
+else
+	shotgun $savedir
+fi
+
+command -v xclip > /dev/null && xclip -selection clipboard -t "image/png" -i $savedir || echo "xclip is not installed. Images cannot be copied to the clipboard"
+
+notify-send -i $savedir "Screenshot taken!" "Saved to $savedir."

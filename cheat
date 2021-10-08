@@ -1,0 +1,5 @@
+#!/bin/sh
+# cheat
+# Makes curl-ing program cheatsheets just a little easier
+
+curl cheat.sh/$1

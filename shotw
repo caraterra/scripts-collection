@@ -1,0 +1,54 @@
+#!/bin/sh
+# shotw
+# Combines the grim, slurp, and wl-clipboard utilities into a simple screenshot
+# tool for Wayland
+
+# grim: https://github.com/emersion/grim
+# slurp: https://github.com/emersion/slurp
+# wl-clipboard: https://github.com/bugaevc/wl-clipboard
+
+print_help() {
+	echo "shot: Takes a screenshot using grim, copying to wl-clipboard."
+	echo -e "  -s\tEnables region selection"
+	echo -e "  -h\tPrints this message and exits"
+}
+
+set_select=false
+
+for i in "$@"; do
+	if [ $i == "-s" ]; then
+		set_select=true
+	elif [ $i == "-h" ]; then
+		print_help
+		exit 0
+	else
+		echo "invalid argument ($i)"
+		exit 1
+	fi
+done
+
+if ! command -v grim > /dev/null; then
+	echo "grim is not installed: https://github.com/emersion/grim"
+	exit 1
+fi
+
+if ! command -v slurp > /dev/null; then
+	echo "slurp is not installed: https://github.com/emersion/slurp"
+	exit 1
+fi
+
+savedir=${HOME}
+[ -d ${HOME}/Pictures ] && savedir=${HOME}/Pictures
+[ -d ${HOME}/Pictures/screenshots ] && savedir=${HOME}/Pictures/screenshots
+
+savedir=${savedir}/$(date +%Y%m%dT%H%M%S%3N).png
+
+if [ $set_select == true ]; then
+	grim -g $(slurp) $savedir
+else
+	grim $savedir
+fi
+
+command -v wl-copy > /dev/null && wl-copy < $savedir || echo "wl-clipboard is not installed. Images cannot be copied to the clipboard"
+
+notify-send -i $savedir "Screenshot taken!" "Saved to $savedir."
