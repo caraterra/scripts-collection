@@ -1,2 +1,2 @@
-# my-bash-scripts
-A collection of my scripts written for the GNU Bourne Again Shell :ox:
+# My Bash Scripts :water_buffalo:
+A collection of my scripts written for the GNU Bourne Again Shell
