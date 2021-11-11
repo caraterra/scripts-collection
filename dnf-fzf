@@ -1,0 +1,43 @@
+#!/bin/sh
+
+install_package() {
+	available_package=$(dnf list -q --available | sed '/^Available Packages/d' | awk '{print $1}' | fzf)
+	[ -n "$available_package" ] && sudo dnf install "$available_package"
+}
+
+remove_package() {
+	installed_package=$(dnf list -q --installed | sed '/^Installed Packages/d' | awk '{print $1}' | fzf)
+	[ -n "$available_package" ] && sudo dnf install "$installed_package"
+}
+
+info_package() {
+	available_package=$(dnf list -q --available | sed '/^Available Packages/d' | awk '{print $1}' | fzf)
+	[ -n "$available_package" ] && dnf info "$available_package"
+}
+
+[ $# -gt 1 ] && {
+	printf "dnf-fzf: Too many arguments\n"
+	exit 1
+}
+
+[ $# -eq 1 ] && {
+	case $1 in
+		"install")
+			install_package
+			;;
+		"remove")
+			remove_package
+			;;
+		"info")
+			info_package
+			;;
+		*)
+			printf "dnf-fzf: Command '%s' does not exist" "$1"
+			exit 1
+			;;
+	esac
+}
+
+[ $# -eq 0 ] && {
+	install_package
+}
