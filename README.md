@@ -1,2 +1,2 @@
-# My Bash Scripts :water_buffalo:
-A collection of my scripts written for the GNU Bourne Again Shell
+# My Shell Scripts
+A collection of my scripts written as POSIX compliantly as possible
