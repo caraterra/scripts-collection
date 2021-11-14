@@ -4,4 +4,4 @@
 
 # Removes succeeding quote + concat operators, preceding quotes
 # and empty lines
-sed 's/\s*"\s*[\.\;]\s*$//g;s/^\s*"\s*//g;/^$/d' ${1:-/dev/stdin}
+sed 's/\s*"\s*[\.\;]\s*$//g;s/^\s*"\s*//g;/^$/d' "${1:-/dev/stdin}"

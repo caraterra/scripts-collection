@@ -2,6 +2,6 @@
 # autoscript
 # Creates a new shell file, makes it executable, and opens it in a text editor
 
-echo '#!/bin/sh' > $1 
-chmod +x $1 
-$EDITOR $1
+echo '#!/bin/sh' > "$1"
+chmod +x "$1"
+"${EDITOR:-vi}" "$1"

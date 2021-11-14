@@ -8,48 +8,53 @@
 # xclip: https://github.com/astrand/xclip
 
 print_help() {
-	echo "shot: Takes a screenshot using shotgun, copying to xclip."
-	echo -e "  -s\tEnables region selection"
-	echo -e "  -h\tPrints this message and exits"
+	printf "shot: Takes a screenshot using shotgun, copying to xclip.\n"
+	printf "\t-s\tEnables region selection\n"
+	printf "\t-h\tPrints this message and exits\n"
 }
 
 set_select=false
 
-for i in "$@"; do
-	if [ $i == "-s" ]; then
+for i in "$@"
+do
+	if [ "$i" = "-s" ]
+	then
 		set_select=true
-	elif [ $i == "-h" ]; then
+	elif [ "$i" = "-h" ]
+	then
 		print_help
 		exit 0
 	else
-		echo "invalid argument ($i)"
+		printf "invalid argument '%s'" "$i"
 		exit 1
 	fi
 done
 
 if ! command -v shotgun > /dev/null; then
-	echo "shotgun is not installed: https://github.com/neXromancers/hacksaw"
+	printf "shotgun is not installed: https://github.com/neXromancers/shotgun\n"
 	exit 1
 fi
 
-if ! command -v hacksaw > /dev/null;
-	echo "hacksaw is not installed: https://github.com/neXromancers/hacksaw"
+if ! command -v hacksaw > /dev/null
+then
+	printf "hacksaw is not installed: https://github.com/neXromancers/hacksaw\n"
 	exit 1
 fi
 
 savedir=${HOME}
-[ -d ${HOME}/Pictures ] && savedir=${HOME}/Pictures
-[ -d ${HOME}/Pictures/screenshots ] && savedir=${HOME}/Pictures/screenshots
+[ -d "${HOME}/Pictures" ] && savedir="${HOME}/Pictures"
+[ -d "${HOME}/Pictures/screenshots" ] && savedir="${HOME}/Pictures/screenshots"
 
-savedir=${savedir}/$(date +%Y%m%dT%H%M%S%3N).png
+savedir="${savedir}/$(date +%Y%m%dT%H%M%S%3N).png"
 
-if [ $set_select == true ]; then
+if [ "$set_select" = true ]
+then
 	selection=$(hacksaw -f "-i %i -g %g")
-	shotgun $selection $savedir
+	shotgun "$selection" "$savedir"
 else
-	shotgun $savedir
+	shotgun "$savedir"
 fi
 
-command -v xclip > /dev/null && xclip -selection clipboard -t "image/png" -i $savedir || echo "xclip is not installed. Images cannot be copied to the clipboard"
+command -v xclip > /dev/null && xclip -selection clipboard -t "image/png" -i "$savedir" || printf "xclip is not installed. Images cannot be copied to the clipboard\n"
 
-notify-send -i $savedir "Screenshot taken!" "Saved to $savedir."
+notify-send -i "$savedir" "Screenshot taken!" "Saved to $savedir."
