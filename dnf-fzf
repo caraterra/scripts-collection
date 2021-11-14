@@ -1,17 +1,22 @@
 #!/bin/sh
 
+print_usage() {
+	printf "Usage: dnf-fzf [install|remove|info]\n"
+	printf "Runs 'dnf-fzf install' if no command is specified"
+}
+
 install_package() {
-	available_package=$(dnf list -q --available | sed '/^Available Packages/d' | awk '{print $1}' | fzf)
+	available_package=$(dnf list -q --available | sed '/^Available Packages/d' | awk '{print $1}' | fzf -m)
 	[ -n "$available_package" ] && sudo dnf install "$available_package"
 }
 
 remove_package() {
-	installed_package=$(dnf list -q --installed | sed '/^Installed Packages/d' | awk '{print $1}' | fzf)
-	[ -n "$available_package" ] && sudo dnf install "$installed_package"
+	installed_package=$(dnf list -q --installed | sed '/^Installed Packages/d' | awk '{print $1}' | fzf -m)
+	[ -n "$available_package" ] && sudo dnf remove "$installed_package"
 }
 
 info_package() {
-	available_package=$(dnf list -q --available | sed '/^Available Packages/d' | awk '{print $1}' | fzf)
+	available_package=$(dnf list -q --available | sed '/^Available Packages/d' | awk '{print $1}' | fzf -m)
 	[ -n "$available_package" ] && dnf info "$available_package"
 }
 
@@ -30,6 +35,10 @@ info_package() {
 			;;
 		"info")
 			info_package
+			;;
+		"help"|"--help"|"-h")
+			print_usage
+			exit 1
 			;;
 		*)
 			printf "dnf-fzf: Command '%s' does not exist" "$1"

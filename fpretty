@@ -1,0 +1,25 @@
+#!/bin/sh
+# fpretty
+# Format filenames
+
+for filename in "$@"
+do
+	basename=$(basename "$filename")
+	dirname=$(dirname "$filename")
+	# Do a bunch of sed nonsense to $filename (in order of appearance)
+	# 	Remove leading and trailing whitespace
+	# 	Make all uppercase letters lowercase
+	# 	Turn all spaces, underscores, and plus signs into hyphens
+	# 	Remove all special characters (excluding hyphens and periods)
+	# 	Remove leading hypens and hyphens preceding file extensions
+	new_basename=$(printf "%s" "$basename" \
+					| sed "s/\(^\s\{1,\}\|\s\{1,\}$\)//g" \
+					| tr "[:upper:]" "[:lower:]" \
+					| tr -s " _+" "-" \
+					| tr -cd "[:alnum:]-." \
+					| sed "s/^-//g;s/-\././g")
+
+	# Creates the new filename by replacing the old basename with the new one
+	new_filename="$dirname/$new_basename"
+ 	[ "$filename" != "$new_filename" ] && mv -v "$filename" "$new_filename"
+done

@@ -1,0 +1,40 @@
+#!/bin/sh
+# mved
+# Bulk rename files using your text editor
+
+[ "$#" -lt 1 ] && {
+	printf "mved: missing file operand\nUsage: mved [FILE]...\n"
+	exit 1
+}
+
+temp_input_file=$(mktemp)
+temp_output_file=$(mktemp)
+trap 'rm -f $temp_input_file $temp_output_file' EXIT HUP INT TERM QUIT
+
+# FIXME: mktemp is not POSIX-compiant. There might be better options
+for filename in "$@"
+do
+	printf "%s\n" "$filename" >> "$temp_input_file"
+done
+cat "$temp_input_file" > "$temp_output_file"
+
+# Run editor on temp_file
+"${EDITOR:-vi}" "$temp_output_file"
+
+# Ensure that the two lists are the same length
+input_file_length=$(wc -l "$temp_input_file" | awk '{print $1}')
+output_file_length=$(wc -l "$temp_output_file" | awk '{print $1}')
+
+[ "$input_file_length" -eq "$output_file_length" ] || {
+	printf "mved: Malformed file\n" 1>&2
+	exit 1
+}
+
+i=1
+while [ "$i" -le "$input_file_length" ]
+do
+	input_line=$(sed "${i}!d" "$temp_input_file")
+	output_line=$(sed "${i}!d" "$temp_output_file")
+	[ "$input_line" = "$output_line" ] || mv -iv "$input_line" "$output_line"
+    i=$((i+1))
+done
