@@ -1,0 +1,9 @@
+#!/bin/sh
+# dropshadow
+# Add a dropshadow to any image
+
+ifile=$1
+ofile=${2:-$ifile}
+
+convert "$ifile" \( +clone -background black -shadow 35x10+5+5 \) +swap \
+	-bordercolor none -border 10 -background none -layers merge +repage "$ofile"
