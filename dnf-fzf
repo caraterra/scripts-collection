@@ -1,4 +1,6 @@
 #!/bin/sh
+# dnf-fzf
+# Find, install, and remove dnf packages using fzf
 
 print_usage() {
 	printf "Usage: dnf-fzf [install|remove|info]\n"
@@ -20,33 +22,28 @@ info_package() {
 	[ -n "$available_package" ] && dnf info "$available_package"
 }
 
-[ $# -gt 1 ] && {
+[ $# -gt 2 ] && {
 	printf "dnf-fzf: Too many arguments\n"
 	exit 1
 }
 
-[ $# -eq 1 ] && {
+[ $# -ge 1 ] && {
 	case $1 in
 		"install")
-			install_package
+			install_package "$2"
 			;;
 		"remove")
-			remove_package
+			remove_package "$2"
 			;;
 		"info")
-			info_package
+			info_package "$2"
 			;;
 		"help"|"--help"|"-h")
 			print_usage
 			exit 1
 			;;
 		*)
-			printf "dnf-fzf: Command '%s' does not exist" "$1"
-			exit 1
+			install_package "$1"
 			;;
 	esac
-}
-
-[ $# -eq 0 ] && {
-	install_package
 }
