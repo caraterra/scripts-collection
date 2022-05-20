@@ -1,5 +1,7 @@
 #!/bin/sh
 # cheat
-# Makes curl-ing program cheatsheets just a little easier
+# Curl cheat.sh command-line cheatsheets. The cheat.sh repository can be found
+# at https://github.com/chubin/cheat.sh
 
-curl "cheat.sh/$1"
+search_query=$(printf "%s" "$*" | sed "s/ /+/g")
+curl "cheat.sh/$search_query"
