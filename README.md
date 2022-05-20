@@ -1,4 +1,7 @@
 # My Shell Scripts
-A collection of my scripts written as POSIX compliantly as possible.
 
-Most of the scripts are linted using [shellcheck](https://github.com/koalaman/shellcheck) with the `-s sh` flag.
+![License](https://img.shields.io/github/license/caraterra/my-shell-scripts?style=for-the-badge)
+
+![Commits](https://img.shields.io/github/commit-activity/m/caraterra/my-shell-scripts?style=for-the-badge)
+
+Most of the scripts are written as POSIX-compliantly as possible and are linted using [shellcheck](https://github.com/koalaman/shellcheck) with the `-s sh` flag.
