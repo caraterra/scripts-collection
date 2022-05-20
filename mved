@@ -14,7 +14,12 @@ trap 'rm -f $temp_input_file $temp_output_file' EXIT HUP INT TERM QUIT
 # FIXME: mktemp is not POSIX-compiant. There might be better options
 for filename in "$@"
 do
-	printf "%s\n" "$filename" >> "$temp_input_file"
+	if [ -e "$filename" ]
+	then
+		printf "%s\n" "$filename" >> "$temp_input_file"
+	else
+		printf "mved: %s, No such file or directory. Ignoring\n" "$filename" 1>&2
+	fi
 done
 cat "$temp_input_file" > "$temp_output_file"
 
