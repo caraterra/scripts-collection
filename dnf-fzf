@@ -3,23 +3,33 @@
 # Find, install, and remove dnf packages using fzf
 
 print_usage() {
-	printf "Usage: dnf-fzf [install|remove|info]\n"
-	printf "Runs 'dnf-fzf install' if no command is specified"
+	printf "Usage: dnf-fzf [install|remove|info] [package_query]\n"
+	printf "Runs 'dnf-fzf install' if no command is specified\n"
+}
+
+get_available_packages() {
+	printf "%s" "$(dnf list -q --available | sed '/^Available Packages/d' \
+		| cut -f1  | cut -d'.' -f1 | uniq)"
+}
+
+get_installed_packages() {
+	printf "%s" "$(dnf list -q --installed | sed '/^Installed Packages/d' \
+		| cut -f1 | cut -d'.' -f1 | uniq)"
 }
 
 install_package() {
-	available_package=$(dnf list -q --available | sed '/^Available Packages/d' | awk '{print $1}' | fzf -m)
-	[ -n "$available_package" ] && sudo dnf install "$available_package"
+	available_package=$(get_available_packages | fzf -m --query="$1" | tr '\n' ' ')
+	[ -n "$available_package" ] && eval "sudo dnf install $available_package"
 }
 
 remove_package() {
-	installed_package=$(dnf list -q --installed | sed '/^Installed Packages/d' | awk '{print $1}' | fzf -m)
-	[ -n "$available_package" ] && sudo dnf remove "$installed_package"
+	installed_package=$(get_installed_packages | fzf -m --query="$1" | tr '\n' ' ')
+	[ -n "$installed_package" ] && eval "sudo dnf remove $installed_package"
 }
 
 info_package() {
-	available_package=$(dnf list -q --available | sed '/^Available Packages/d' | awk '{print $1}' | fzf -m)
-	[ -n "$available_package" ] && dnf info "$available_package"
+	available_package=$(get_available_packages | fzf -m --query="$1" | tr '\n' ' ')
+	[ -n "$available_package" ] && eval "dnf info $available_package"
 }
 
 [ $# -gt 2 ] && {
