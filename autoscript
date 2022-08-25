@@ -2,11 +2,24 @@
 # autoscript
 # Creates a new shell file, makes it executable, and opens it in a text editor
 
-[ -f $1 ] && {
-	printf "%s already exists\n" "$1"
+if [ -z "$1" ]
+then
+	echo "Usage: ./autoscript FILE" >&2
 	exit 1
-}
+fi
 
-echo '#!/bin/sh' > $1
-chmod +x $1
-$EDITOR $1
+if [ "$1" = "-h" ]
+then
+	echo "Usage: ./autoscript FILE" >&2
+	exit
+fi
+
+if [ -f "$1" ]
+then
+	printf "%s already exists\n" "$1" >&2
+	exit 1
+fi
+
+echo '#!/bin/sh' > "$1"
+chmod u+x "$1"
+$EDITOR "$1"
