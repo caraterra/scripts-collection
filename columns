@@ -1,0 +1,57 @@
+#!/bin/awk -f
+# columns
+# Converts a list of strings into aligned columns
+
+BEGIN {
+	max_len = 0
+	auto_width = 0
+	max_cols = int(ARGV[1])
+	if (max_cols == 0) {
+		if (ARGV[1] == "auto") {
+			auto_width = 1
+		} else {
+			abort = 1
+			print "Usage: ./columns MAX_COLS [FILE]\n"
+			print "  MAX_COLS\tThe maximum number of columns to print as a positive integer."
+			print "          \tUse `auto` to fit to the terminal screen."
+			exit
+		}
+	}
+	ARGV[1]=""
+}
+
+{
+	items[NR] = $0
+	curr_len = length($0)
+	if (curr_len > max_len) {
+		max_len = curr_len
+	}
+}
+
+END {
+	if (abort) {
+		exit 1
+	}
+
+	if (NR == 0 || max_len == 0) {
+		exit
+	}
+
+	if (auto_width) {
+		"tput cols" | getline term_width
+		max_cols = int(int(term_width) / (max_len + pad))
+	}
+
+	rows = (NR % max_cols == 0) ? int(NR / max_cols) : int((NR / max_cols) + 1);
+	pad = 2
+	for (row = 1; row <= rows; ++row) {
+		for (i = row; i <= NR; i += rows) {
+			if (i + rows <= NR) {
+				printf "%-*s", max_len + pad, items[i]
+			} else {
+				printf "%s", items[i]
+			}
+		}
+		printf "\n"
+	}
+}

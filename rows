@@ -1,0 +1,56 @@
+#!/bin/awk -f
+# rows
+# Converts a list of strings into aligned rows
+
+BEGIN {
+	max_len=0
+	auto_width = 0
+	cols=int(ARGV[1])
+	if (cols == 0) {
+		if (ARGV[1] == "auto") {
+			auto_width = 1
+		} else {
+			abort 1
+			print "Usage: ./rows COLS [FILE]\n"
+			print "  COLS \tThe number of columns to print as a positive integer."
+			print "          \tUse `auto` to fit to the terminal screen."
+			exit
+		}
+	}
+	ARGV[1]=""
+}
+
+{
+	items[NR]=$0
+	curr_len=length($0)
+	if (curr_len > max_len) {
+		max_len=curr_len
+	}
+}
+
+END {
+	if (abort) {
+		exit 1
+	}
+
+	if (NR == 0 || max_len == 0) {
+		exit 1
+	}
+
+	if (auto_width) {
+		"tput cols" | getline term_width
+		cols = int(int(term_width) / (max_len + pad))
+	}
+
+	pad=2
+	curr_col=0
+	for (i in items) {
+		if (curr_col == cols - 1 || i == NR) {
+			printf "%s\n", items[i]
+			curr_col=0
+		} else {
+			printf "%-*s", max_len + pad, items[i]
+			++curr_col
+		}
+	}
+}
