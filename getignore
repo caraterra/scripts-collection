@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+"""getignore
+Download gitignore files from https://github.com/github/gitignore.
+
+List all available gitignore files
+./getignore.py
+
+Fetch the given gitignore file
+./getignore.py filename
+"""
+
+# TODO: When multiple files are passed to the script, concatenate the
+# gitignore files
+
+import os
+import sys
+from base64 import b64decode
+
+import requests
+
+
+def get_tree(session=None):
+    """Get the file tree from github/gitignore and make a dict with basename/url key-value pairs
+
+    :param session: The requests session, if connection pooling is desired
+    :type session: requests.Session
+    """
+    tree_url = (
+        "https://api.github.com/repos/github/gitignore/git/trees/main?recursive=1"
+    )
+    res = session.get(tree_url) if session else requests.get(tree_url)
+    res.raise_for_status()
+    tree = res.json()["tree"]
+
+    # Turn path and url fields in key, value pairs
+    trimmed_tree = {
+        os.path.splitext(os.path.basename(i["path"]))[0]: i["url"]
+        for i in tree
+        if i["path"].endswith("gitignore")
+    }
+    trimmed_tree = dict(sorted(trimmed_tree.items(), key=lambda i: i[0].lower()))
+    return trimmed_tree
+
+
+def list_files():
+    """List all availabile gitignore files in the tree"""
+    keys = list(get_tree().keys())
+    keys_len = len(keys)
+
+    max_len = 0
+    for key in keys:
+        curr_len = len(key)
+        if curr_len > max_len:
+            max_len = curr_len
+
+    pad = 2
+    cols = os.get_terminal_size()[0] // (max_len + pad)
+    rows = keys_len // cols if (keys_len % cols == 0) else (keys_len // cols) + 1
+    for row in range(rows):
+        for i in range(row, keys_len, rows):
+            if i + rows < keys_len:
+                print(keys[i].ljust(max_len + pad), end="")
+            else:
+                print(keys[i])
+
+
+def get_file(match_str):
+    """Given a string key, get the gitignore file stored at its url value
+
+    :param match_str: The string specifying the gitignore file to fetch. Case sensitive
+    :type match_str: str
+    """
+    with requests.Session() as sess:
+        file_tree = get_tree(session=sess)
+        try:
+            file_url = file_tree[match_str]
+            res = sess.get(file_url)
+            res.raise_for_status()
+            file_b64 = res.json()["content"]
+            print(str(b64decode(file_b64), "utf_8"), end="")
+        except KeyError:
+            similar_results = [i for i in file_tree.keys() if match_str in i]
+            if len(similar_results):
+                print(
+                    f"No results could be found for '{match_str}'.\n"
+                    "Here are some similar results:\n"
+                )
+                print("\n".join(similar_results))
+                print()
+            else:
+                print(f"No results found for '{match_str}'.")
+            sys.exit(1)
+
+
+def get_files(match_strs):
+    """Given a list of string keys, get the gitignore files stored at their urls and concatenate them
+
+    :param match_str: The string specifying the gitignore file to fetch. Case sensitive
+    :type match_str: str
+    """
+    b64_files = []
+    with requests.Session() as sess:
+        file_tree = get_tree(session=sess)
+        for match_str in match_strs:
+            try:
+                file_url = file_tree[match_str]
+                res = sess.get(file_url)
+                res.raise_for_status()
+                b64_files.append(res.json()["content"])
+            except KeyError:
+                similar_results = [i for i in file_tree.keys() if match_str in i]
+                if len(similar_results):
+                    print(
+                        f"No results could be found for '{match_str}'.\n"
+                        "Here are some similar results:\n"
+                    )
+                    print("\n".join(similar_results))
+                    print()
+                else:
+                    print(f"No results found for '{match_str}'.")
+                sys.exit(1)
+
+    for b64_file in b64_files:
+        print(str(b64decode(b64_file), "utf_8"), end="")
+
+
+def print_usage():
+    """Print the program usage information"""
+    print(
+        "List all availabile gitignore files.\n"
+        f"{sys.argv[0]}\n\n"
+        "Get specified gitignore file.\n"
+        f"{sys.argv[0]} filename"
+    )
+
+
+def main():
+    """Accept command-line arguments and run the script"""
+    if "-h" in sys.argv:
+        print_usage()
+        sys.exit()
+
+    argc = len(sys.argv)
+    if argc == 1:
+        list_files()
+    elif argc == 2:
+        # get_file(sys.argv[1])
+        get_files(sys.argv[1:])
+    else:
+        print_usage()
+        sys.exit(2)
+
+
+if __name__ == "__main__":
+    main()
