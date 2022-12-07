@@ -21,8 +21,8 @@ BEGIN {
 }
 
 {
-	items[NR]=$0
-	curr_len=length($0)
+	items[NR] = $0
+	curr_len = length($0)
 	if (curr_len > max_len) {
 		max_len=curr_len
 	}
@@ -45,7 +45,7 @@ END {
 	}
 
 	curr_col=0
-	for (i in items) {
+	for (i = 1; i <= NR; ++i) {
 		if (curr_col == cols - 1 || i == NR) {
 			printf "%s\n", items[i]
 			curr_col=0
