@@ -1,4 +1,4 @@
-#!/bin/awk -f
+#!/usr/bin/awk -f
 # rows
 # Converts a list of strings into aligned rows
 

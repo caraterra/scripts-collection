@@ -1,4 +1,4 @@
-#!/bin/awk -f
+#!/usr/bin/awk -f
 # columns
 # Converts a list of strings into aligned columns
 
