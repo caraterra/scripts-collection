@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+import argparse
+import sys
+from typing import Generator, Iterable
+
+
+def lexicographic(character_set: Iterable[str]) -> Generator[str, None, None]:
+    character_set = sorted(set(character_set))
+    character_dict = {c: i for i, c in enumerate(character_set)}
+
+    yield ""
+    initial_str = character_set[0]
+    yield initial_str
+
+    next_str = list(initial_str)
+    while True:
+        all_last = True
+        for i, c in enumerate(next_str):
+            if c != character_set[-1]:
+                all_last = False
+                next_str[i] = character_set[character_dict[c] + 1]
+                break
+            else:
+                next_str[i] = character_set[0]
+        if all_last:
+            next_str = [character_set[0]] * (len(next_str) + 1)
+        yield "".join(next_str[::-1])
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="shortlex",
+        description="Generate strings in a given character set in shortex order.",
+    )
+    parser.add_argument(
+        "character_set",
+        metavar="CHARACTER_SET",
+        type=str,
+        help="The character set from which to generate the strings.",
+    )
+    parser.add_argument(
+        "num_strings", metavar="N", type=int, help="The number of strings to generate."
+    )
+    args = parser.parse_args()
+
+    lex = lexicographic(args.character_set)
+    for i in range(args.num_strings):
+        print(next(lex))
+
+
+if __name__ == "__main__":
+    main()
