@@ -37,12 +37,13 @@ END {
 		exit 1
 	}
 
+	pad=2
+
 	if (auto_width) {
 		"tput cols" | getline term_width
 		cols = int(int(term_width) / (max_len + pad))
 	}
 
-	pad=2
 	curr_col=0
 	for (i in items) {
 		if (curr_col == cols - 1 || i == NR) {

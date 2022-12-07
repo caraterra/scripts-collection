@@ -37,13 +37,14 @@ END {
 		exit
 	}
 
+	pad = 2
+
 	if (auto_width) {
 		"tput cols" | getline term_width
 		max_cols = int(int(term_width) / (max_len + pad))
 	}
 
 	rows = (NR % max_cols == 0) ? int(NR / max_cols) : int((NR / max_cols) + 1);
-	pad = 2
 	for (row = 1; row <= rows; ++row) {
 		for (i = row; i <= NR; i += rows) {
 			if (i + rows <= NR) {
