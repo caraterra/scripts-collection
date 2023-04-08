@@ -10,12 +10,14 @@ do
 	# 	Remove leading and trailing whitespace
 	# 	Make all uppercase letters lowercase
 	# 	Turn all spaces, underscores, and plus signs into hyphens
+	# 	Remove duplicate hyphens
 	# 	Remove all special characters (excluding hyphens and periods)
 	# 	Remove leading hypens and hyphens preceding file extensions
 	new_basename=$(printf '%s' "$basename" \
 					| sed 's/\(^[[:space:]]\{1,\}\|[[:space:]]\{1,\}$\)//g' \
 					| tr '[:upper:]' '[:lower:]' \
 					| tr -s ' _+' '-' \
+					| sed 's/-\{2,\}/-//g'
 					| tr -cd '[:alnum:]-.' \
 					| sed 's/^-//g;s/-\./\./g')
 
