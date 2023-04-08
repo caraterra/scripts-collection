@@ -2,10 +2,11 @@
 # mved
 # Bulk rename files using your text editor
 
-[ "$#" -lt 1 ] && {
-	printf "mved: missing file operand\nUsage: mved [FILE]...\n"
+if [ "$#" -lt 1 ]
+then
+	printf 'mved: missing file operand\nusage: mved FILE...\n' >& 2
 	exit 1
-}
+fi
 
 temp_input_file=$(mktemp)
 temp_output_file=$(mktemp)
@@ -16,9 +17,9 @@ for filename in "$@"
 do
 	if [ -e "$filename" ]
 	then
-		printf "%s\n" "$filename" >> "$temp_input_file"
+		printf '%s\n' "$filename" >> "$temp_input_file"
 	else
-		printf "mved: %s, No such file or directory. Ignoring\n" "$filename" 1>&2
+		printf 'mved: %s, no such file or directory. Ignoring\n' "$filename" >& 2
 	fi
 done
 cat "$temp_input_file" > "$temp_output_file"
@@ -31,7 +32,7 @@ input_file_length=$(wc -l "$temp_input_file" | awk '{print $1}')
 output_file_length=$(wc -l "$temp_output_file" | awk '{print $1}')
 
 [ "$input_file_length" -eq "$output_file_length" ] || {
-	printf "mved: Malformed file\n" 1>&2
+	printf 'mved: malformed file\n' 1>&2
 	exit 1
 }
 
