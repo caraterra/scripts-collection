@@ -1,30 +1,40 @@
 #!/usr/bin/env python3
 """getignore
+
 Download gitignore files from https://github.com/github/gitignore.
-
-List all available gitignore files
-./getignore.py
-
-Fetch the given gitignore file
-./getignore.py filename
 """
 
-# TODO: When multiple files are passed to the script, concatenate the
-# gitignore files
-
 import os
+import re
 import sys
+from argparse import ArgumentParser
 from base64 import b64decode
+from difflib import Differ, get_close_matches
+from functools import reduce
+from typing import Iterable
 
 import requests
 
 
-def get_tree(session=None):
-    """Get the file tree from github/gitignore and make a dict with basename/url key-value pairs
+def unique_lines(text):
+    unique_lines = []
+    for line in text.splitlines(keepends=True):
+        if line not in unique_lines or line.isspace():
+            unique_lines.append(line)
+    return "".join(unique_lines)
 
-    :param session: The requests session, if connection pooling is desired
-    :type session: requests.Session
-    """
+
+def merge(a, b):
+    a = a.splitlines(keepends=True)
+    b = b.splitlines(keepends=True)
+    differ = Differ()
+    result = "".join(differ.compare(a, b))
+    result = re.sub(r"^[+\- ] ", "", result, flags=re.MULTILINE)
+    result = re.sub(r"^\?.*\n?", "", result, flags=re.MULTILINE)
+    return result
+
+
+def get_urls(session=None):
     tree_url = (
         "https://api.github.com/repos/github/gitignore/git/trees/main?recursive=1"
     )
@@ -32,28 +42,22 @@ def get_tree(session=None):
     res.raise_for_status()
     tree = res.json()["tree"]
 
-    # Turn path and url fields in key, value pairs
-    trimmed_tree = {
+    url_map = {
         os.path.splitext(os.path.basename(i["path"]))[0]: i["url"]
         for i in tree
-        if i["path"].endswith("gitignore")
+        if i["path"].endswith(".gitignore")
     }
-    trimmed_tree = dict(sorted(trimmed_tree.items(), key=lambda i: i[0].lower()))
-    return trimmed_tree
+    url_map = dict(sorted(url_map.items(), key=lambda i: i[0].lower()))
+    return url_map
 
 
-def list_files():
+def list_files(pad=2):
     """List all availabile gitignore files in the tree"""
-    keys = list(get_tree().keys())
+    keys = list(get_urls().keys())
     keys_len = len(keys)
 
-    max_len = 0
-    for key in keys:
-        curr_len = len(key)
-        if curr_len > max_len:
-            max_len = curr_len
+    max_len = max([len(key) for key in keys])
 
-    pad = 2
     cols = os.get_terminal_size()[0] // (max_len + pad)
     rows = keys_len // cols if (keys_len % cols == 0) else (keys_len // cols) + 1
     for row in range(rows):
@@ -64,91 +68,73 @@ def list_files():
                 print(keys[i])
 
 
-def get_file(match_str):
-    """Given a string key, get the gitignore file stored at its url value
+class GitignoreNotFoundError(Exception):
+    pass
 
-    :param match_str: The string specifying the gitignore file to fetch. Case sensitive
-    :type match_str: str
-    """
+
+def get_files(match_strs: Iterable[str]) -> list[str]:
+    gitignores = []
     with requests.Session() as sess:
-        file_tree = get_tree(session=sess)
-        try:
-            file_url = file_tree[match_str]
-            res = sess.get(file_url)
-            res.raise_for_status()
-            file_b64 = res.json()["content"]
-            print(str(b64decode(file_b64), "utf_8"), end="")
-        except KeyError:
-            similar_results = [i for i in file_tree.keys() if match_str in i]
-            if len(similar_results):
-                print(
-                    f"No results could be found for '{match_str}'.\n"
-                    "Here are some similar results:\n"
-                )
-                print("\n".join(similar_results))
-                print()
-            else:
-                print(f"No results found for '{match_str}'.")
-            sys.exit(1)
-
-
-def get_files(match_strs):
-    """Given a list of string keys, get the gitignore files stored at their urls and concatenate them
-
-    :param match_str: The string specifying the gitignore file to fetch. Case sensitive
-    :type match_str: str
-    """
-    b64_files = []
-    with requests.Session() as sess:
-        file_tree = get_tree(session=sess)
+        file_tree = get_urls(session=sess)
         for match_str in match_strs:
             try:
                 file_url = file_tree[match_str]
-                res = sess.get(file_url)
-                res.raise_for_status()
-                b64_files.append(res.json()["content"])
             except KeyError:
-                similar_results = [i for i in file_tree.keys() if match_str in i]
+                error_message = f"No results found for '{match_str}'.\n"
+                similar_results = get_close_matches(match_str, file_tree.keys())
+
                 if len(similar_results):
-                    print(
-                        f"No results could be found for '{match_str}'.\n"
-                        "Here are some similar results:\n"
-                    )
-                    print("\n".join(similar_results))
-                    print()
-                else:
-                    print(f"No results found for '{match_str}'.")
-                sys.exit(1)
+                    error_message += "Did you mean...\n\n" + "\n".join(similar_results)
 
-    for b64_file in b64_files:
-        print(str(b64decode(b64_file), "utf_8"), end="")
+                raise GitignoreNotFoundError(error_message)
 
+            res = sess.get(file_url)
+            res.raise_for_status()
+            file_b64 = res.json()["content"]
+            file_contents = str(b64decode(file_b64), encoding="utf-8")
+            gitignores.append(file_contents)
 
-def print_usage():
-    """Print the program usage information"""
-    print(
-        "List all availabile gitignore files.\n"
-        f"{sys.argv[0]}\n\n"
-        "Get specified gitignore file.\n"
-        f"{sys.argv[0]} filename"
-    )
+    return gitignores
 
 
 def main():
-    """Accept command-line arguments and run the script"""
-    if "-h" in sys.argv:
-        print_usage()
+    parser = ArgumentParser(
+        description="Get .gitignore files from https://github.com/github/gitignore."
+    )
+    parser.add_argument(
+        "-l", "--list", action="store_true", help="list all available gitignore files"
+    )
+    parser.add_argument(
+        "-m",
+        "--merge",
+        action="store_true",
+        help="merge multiple gitignore files rather than concatenating them",
+    )
+    parser.add_argument(
+        "-k",
+        "--keep-dups",
+        action="store_true",
+        help="don't remove duplicate patterns",
+    )
+    parser.add_argument("files", nargs="*")
+    args = parser.parse_args()
+
+    if args.list:
+        list_files()
         sys.exit()
 
-    argc = len(sys.argv)
-    if argc == 1:
-        list_files()
-    elif argc == 2:
-        # get_file(sys.argv[1])
-        get_files(sys.argv[1:])
-    else:
-        print_usage()
-        sys.exit(2)
+    try:
+        gitignores = get_files(args.files)
+    except Exception as exception:
+        print(exception, file=sys.stderr)
+        sys.exit(1)
+
+    result = reduce(merge, gitignores) if args.merge else "\n".join(gitignores)
+
+    if not args.keep_duplicates:
+        result = unique_lines(result)
+
+    print(result, end="")
 
 
 if __name__ == "__main__":
