@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+"""mdtable
+Convert csv files to Markdown tables
+"""
+
+import argparse
+import csv
+import io
+import pathlib
+import sys
+
+
+def sanitize_row(row):
+    return [s.replace("\n", " ").strip() for s in row]
+
+
+def pad_row(row, pad_list):
+    return [field.ljust(pad_list[index]) for index, field in enumerate(row)]
+
+
+def head(input_file, lines):
+    return "".join([input_file.readline() for i in range(lines)])
+
+
+def print_table(csv_file, pad=False):
+
+    dialect = csv.Sniffer().sniff(head(csv_file, 20))
+    csv_file.seek(0)
+    reader = csv.reader(csv_file, dialect=dialect)
+
+    header = sanitize_row(next(reader))
+    columns = len(header)
+
+    if pad:
+        max_col_lens = [len(field) for field in header]
+        for row in reader:
+            for index, field in enumerate(row):
+                field_len = len(field)
+                if field_len > max_col_lens[index]:
+                    max_col_lens[index] = field_len
+        print("| {} |".format(" | ".join(pad_row(header, max_col_lens))))
+        print(
+            "|{}|".format(
+                "|".join(["-" * (pad_width + 2) for pad_width in max_col_lens])
+            )
+        )
+        csv_file.seek(0)
+        next(reader)
+        for row in reader:
+            print("| {} |".format(" | ".join(pad_row(sanitize_row(row), max_col_lens))))
+    else:
+        print("| {} |".format(" | ".join(header)))
+        print("|" + "---|" * columns)
+        for row in reader:
+            print("| {} |".format(" | ".join(sanitize_row(row))))
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-p", "--pad", action="store_true", help="align cells by padding with spaces"
+    )
+    parser.add_argument(
+        "files",
+        metavar="FILE",
+        type=pathlib.Path,
+        nargs="*",
+        help="CSV files to convert to Markdown tables",
+    )
+    args = parser.parse_args()
+
+    if args.files:
+        for filename in args.files:
+            if filename != args.files[0]:  # Add newline between tables
+                print("")
+            try:
+                with open(filename, newline="") as csv_file:
+                    print_table(csv_file, pad=args.pad)
+            except Exception as exception:
+                print(exception, file=sys.stderr)
+    else:
+        stdin_str = io.StringIO(sys.stdin.read())
+        print_table(stdin_str, pad=args.pad)
+
+
+if __name__ == "__main__":
+    main()
