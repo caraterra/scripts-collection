@@ -6,7 +6,7 @@ for filename in "$@"
 do
 	basename=$(basename "$filename")
 	dirname=$(dirname "$filename")
-	# Do a bunch of sed nonsense to $filename (in order of appearance)
+	# Do a bunch of sed nonsense to $basename (in order of appearance)
 	# 	Remove leading and trailing whitespace
 	# 	Make all uppercase letters lowercase
 	# 	Turn all spaces, underscores, and plus signs into hyphens
