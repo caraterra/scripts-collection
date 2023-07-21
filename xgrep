@@ -1,0 +1,61 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'nokogiri'
+require 'optparse'
+
+quiet = false
+
+OptionParser.new do |parser|
+  parser.banner = <<-BANNER
+  usage: xgrep [-hq] xpath_expression file...
+  A grep-like tool for XML using XPath expressions
+  BANNER
+
+  parser.summary_width = 4
+
+  parser.on('-h', 'Print this message and exit') do |_|
+    puts parser
+    exit
+  end
+
+  parser.on('-q',
+            'Suppress normal output, exiting with a status of zero if a match is found and nonzero otherwise') do |_|
+    quiet = true
+  end
+end.parse!
+
+begin
+	xpath_expression = ARGV[0]
+	filename = ARGV[1]
+rescue IndexError
+  puts "missing arguments. see `xgrep -h` for help"
+	exit 2
+end
+
+begin
+  doc = File.open(filename) { |file| Nokogiri::XML(file) }
+rescue StandardError => e
+  $stderr.printf "%<error>s: '%<filename>s'\n", error: e.to_s.partition(' @ ')[0], filename: filename
+  exit 2
+end
+
+begin
+  matches = doc.xpath(xpath_expression)
+rescue Nokogiri::XML::XPath::SyntaxError
+  warn 'Invalid expression'
+  exit 2
+end
+
+case matches
+when Float
+  matches_exist = matches > 0
+when TrueClass, FalseClass
+  matches_exist = matches
+when String, Nokogiri::XML::NodeSet
+  matches_exist = !matches.empty?
+end
+
+puts matches if !quiet
+
+exit matches_exist ? 0 : 1
