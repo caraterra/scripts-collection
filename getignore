@@ -131,7 +131,7 @@ def main():
 
     result = reduce(merge, gitignores) if args.merge else "\n".join(gitignores)
 
-    if not args.keep_duplicates:
+    if not args.keep_dups:
         result = unique_lines(result)
 
     print(result, end="")
