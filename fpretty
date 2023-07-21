@@ -1,6 +1,6 @@
 #!/bin/sh
 # fpretty
-# Format filenames
+# format filenames
 
 for filename in "$@"
 do
@@ -17,7 +17,7 @@ do
 					| sed 's/\(^[[:space:]]\{1,\}\|[[:space:]]\{1,\}$\)//g' \
 					| tr '[:upper:]' '[:lower:]' \
 					| tr -s ' _+' '-' \
-					| sed 's/-\{2,\}/-//g'
+					| sed 's/-\{2,\}/-/g' \
 					| tr -cd '[:alnum:]-.' \
 					| sed 's/^-//g;s/-\./\./g')
 
